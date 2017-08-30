@@ -95,6 +95,26 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     
   end
 
+  test "do not allow booking deactivated cars" do 
+    user = User.new
+    user.save!
+    car1 = Car.new
+    car1.active = false
+    car1.save!
+
+    now = Time.now
+
+    post bookings_url, params: {
+      car_id: car1.id,
+      starts_at: timestr(now),
+      ends_at: timestr(now + 0.5*h), 
+    }
+    assert_equal 403, @response.status
+    res = JSON.parse(@response.body)
+    assert_equal res["error"], "car_deactivated"
+    
+  end
+
   def h
     60 * 60  
   end

@@ -23,6 +23,19 @@ class BookingsController < ApplicationController
                 return
             end
 
+            car = nil
+            begin 
+                car = Car.find(b.car_id)
+            rescue ActiveRecord::RecordNotFound => e
+                    render_error 400, :invalid_request, "No car with provided id"
+                return
+            end
+
+            if !car.active
+                render_error 403, :car_deactivated, "Car is deactivated"
+                return
+            end     
+
             begin 
                 b.save!
             rescue ActiveRecord::RecordInvalid => e

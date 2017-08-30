@@ -10,7 +10,6 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     car1 = Car.new
     car1.save!
 
-    h = 60 * 60
     now = Time.now
 
     booking(
@@ -45,11 +44,9 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
 
     user = User.new
     user.save!
-
     car1 = Car.new
     car1.save!
 
-    h = 60 * 60
     now = Time.now
 
     post bookings_url, params: {
@@ -69,6 +66,37 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     res = JSON.parse(@response.body)
     assert_equal res["error"], "invalid_request"
 
+  end
+
+  test "do not allow booking same car twice" do
+
+    user = User.new
+    user.save!
+    car1 = Car.new
+    car1.save!
+
+    now = Time.now
+
+    post bookings_url, params: {
+      car_id: car1.id,
+      starts_at: timestr(now),
+      ends_at: timestr(now + 0.5*h), 
+    }
+    assert_equal 200, @response.status
+
+    post bookings_url, params: {
+      car_id: car1.id,
+      starts_at: timestr(now),
+      ends_at: timestr(now + 0.5*h), 
+    }
+    assert_equal 403, @response.status    
+    res = JSON.parse(@response.body)
+    assert_equal res["error"], "double_booked"
+    
+  end
+
+  def h
+    60 * 60  
   end
 
   def booking(car_id, starts_at, ends_at)

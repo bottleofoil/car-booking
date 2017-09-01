@@ -27,7 +27,7 @@ class BookingsController < ApplicationController
             begin 
                 car = Car.find(b.car_id)
             rescue ActiveRecord::RecordNotFound => e
-                    render_error 400, :invalid_request, "No car with provided id"
+                render_error 400, :invalid_request, "No car with provided id"
                 return
             end
 
@@ -49,7 +49,12 @@ class BookingsController < ApplicationController
     end
 
     def index
-        models = Booking.all
+        models = nil
+        if params[:car_id]
+            models = Booking.where("car_id = ?", params[:car_id])
+        else 
+            models = Booking.all
+        end
         render json: models
     end
 

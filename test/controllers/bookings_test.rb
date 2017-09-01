@@ -131,5 +131,32 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
   def timestr(time)
     time.utc.to_datetime.rfc3339(3).gsub("+00:00", "Z")
   end
+
+  test "filtering the list of bookings by car id" do
+    user = User.new
+    user.save!
+
+    car1 = Car.new
+    car1.save!
+    car2 = Car.new
+    car2.save!
+
+    now = Time.now
+
+    booking(car1.id, now, now + 0.5*h)
+    booking(car1.id, now + 1*h, now + 1.5*h)
+    booking(car2.id, now, now + 0.5*h)
+
+    get (bookings_url+"?car_id="+car2.id.to_s)
+
+    res = JSON.parse(@response.body)
+    assert_equal 200, @response.status
+    assert_equal 1, res.length
+    
+    assert_equal user.id, res[0]["user_id"]
+    assert_equal car2.id, res[0]["car_id"]
+    assert_equal timestr(now), res[0]["starts_at"]
+    assert_equal timestr(now + 0.5*h), res[0]["ends_at"]
+  end
 end
 

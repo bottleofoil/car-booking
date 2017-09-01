@@ -38,6 +38,17 @@ class AuthIntegrationTest < ActionDispatch::IntegrationTest
 
   end
 
+  test "create user invalid requests" do
+    post users_url, params: {
+        email: "",
+        password: "password",
+    }
+    assert_equal 400, @response.status  
+
+    res = JSON.parse(@response.body)
+    assert_equal res["error"], "invalid_request"    
+  end
+
   test "auth is required to see list of bookings" do
       get bookings_url
       assert_equal 403, @response.status

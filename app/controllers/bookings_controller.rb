@@ -45,7 +45,7 @@ class BookingsController < ProtectedController
 
         end
     
-        render json: {success: true}
+        render json: {id: b.id}
     end
 
     def index
@@ -79,4 +79,42 @@ class BookingsController < ProtectedController
         end
     end
 
+    def start
+        booking = get_booking
+        if !booking 
+            return
+        end
+        err = booking.start
+        if err != nil
+            render_error 400, err, ""
+            return
+        end
+        render json: {}
+    end
+
+    def end
+        booking = get_booking
+        if !booking 
+            return
+        end  
+        err = booking.end
+        if err != nil
+            render_error 400, err, ""
+            return
+        end
+       
+        booking.save!
+        render json: {}              
+    end
+
+    private
+
+    def get_booking
+        begin 
+            return Booking.find(params[:id])
+        rescue ActiveRecord::RecordNotFound => e
+            render_error 400, :invalid_request, "booking not found with provided id"
+            return false
+        end
+    end
 end

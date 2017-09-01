@@ -49,13 +49,34 @@ class BookingsController < ApplicationController
     end
 
     def index
-        models = nil
-        if params[:car_id]
-            models = Booking.where("car_id = ?", params[:car_id])
-        else 
-            models = Booking.all
+        q = Booking
+        all = true
+
+        if params[:time]
+            case params[:time]
+                when "current"
+                    now = Time.now
+                    q = q.where("starts_at <= ? AND ends_at >= ?", now, now)
+                    all = false
+                when "upcoming"
+                    q = q.where("starts_at >= ?", Time.now)
+                    all = false
+                else 
+                    render_error 400, :invalid_request, "time parameter must be current or upcoming"
+                    return
+            end
         end
-        render json: models
+
+        if params[:car_id]
+            q = q.where("car_id = ?", params[:car_id])
+            all = false
+        end
+
+        if all 
+            render json: Booking.all
+        else
+            render json: q
+        end
     end
 
 end

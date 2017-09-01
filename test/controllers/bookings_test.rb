@@ -158,5 +158,69 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     assert_equal timestr(now), res[0]["starts_at"]
     assert_equal timestr(now + 0.5*h), res[0]["ends_at"]
   end
+
+  test "filtering the list of bookings by upcoming and current" do
+    user = User.new
+    user.save!
+
+    car1 = Car.new
+    car1.save!
+    car2 = Car.new
+    car2.save!
+
+    now = Time.now
+
+    booking(car1.id, now - 2*h, now - 1*h)
+    booking(car1.id, now, now + 1*h)
+    booking(car1.id, now + 1.5*h, now + 2*h)
+
+    get (bookings_url+"?time=current")
+    
+    res = JSON.parse(@response.body)
+    assert_equal 200, @response.status
+    assert_equal 1, res.length
+
+    assert_equal timestr(now), res[0]["starts_at"]
+    assert_equal timestr(now + 1*h), res[0]["ends_at"]
+
+    get (bookings_url+"?time=upcoming")
+    res = JSON.parse(@response.body)
+    assert_equal 200, @response.status
+    assert_equal 1, res.length
+
+    assert_equal timestr(now + 1.5*h), res[0]["starts_at"]
+    assert_equal timestr(now + 2*h), res[0]["ends_at"]
+
+  end
+
+  test "filtering the list of bookings by both upcoming,current and car id" do
+    user = User.new
+    user.save!
+
+    car1 = Car.new
+    car1.save!
+    car2 = Car.new
+    car2.save!
+
+    now = Time.now
+
+    booking(car1.id, now - 2*h, now - 1*h)
+    booking(car1.id, now, now + 1*h)
+    booking(car1.id, now + 1.5*h, now + 2*h)
+    booking(car2.id, now - 2*h, now - 1*h)
+    booking(car2.id, now, now + 1*h)
+    booking(car2.id, now + 1.5*h, now + 2*h)
+
+    get (bookings_url+"?time=current&car_id="+car2.id.to_s)
+    
+    res = JSON.parse(@response.body)
+    assert_equal 200, @response.status
+    assert_equal 1, res.length
+
+    assert_equal car2.id, res[0]["car_id"]
+    assert_equal timestr(now), res[0]["starts_at"]
+    assert_equal timestr(now + 1*h), res[0]["ends_at"]   
+  end
+
 end
 

@@ -1,8 +1,8 @@
-class BookingsController < ApplicationController
+class BookingsController < ProtectedController
 
     def create
         b = Booking.new
-        b.user_id = User.first.id
+        b.user_id = @user.id
         required = [:car_id, :starts_at, :ends_at]
         required.each do |p|
             if !params[p]

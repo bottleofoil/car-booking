@@ -4,8 +4,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
 
   test "create and list basic" do
 
-    user = User.new
-    user.save!
+    @auth_token = create_user
 
     car1 = Car.new
     car1.save!
@@ -24,7 +23,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       now + 1.5*h, 
     )
 
-    get bookings_url
+    get_auth bookings_url
 
     res = JSON.parse(@response.body)
     assert_equal 200, @response.status
@@ -32,7 +31,6 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
 
     res.sort_by! { |obj| obj['starts_at'] }
     
-    assert_equal user.id, res[0]["user_id"]
     assert_equal car1.id, res[0]["car_id"]
     assert_equal timestr(now), res[0]["starts_at"]
     assert_equal timestr(now + 0.5*h), res[0]["ends_at"]
@@ -42,14 +40,14 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
 
   test "create invalid requests" do
 
-    user = User.new
-    user.save!
+    @auth_token = create_user
+
     car1 = Car.new
     car1.save!
 
     now = Time.now
 
-    post bookings_url, params: {
+    post_auth bookings_url, params: {
       starts_at: timestr(now),
       ends_at: timestr(now + 0.5*h), 
     }
@@ -57,7 +55,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     res = JSON.parse(@response.body)
     assert_equal res["error"], "invalid_request"
 
-    post bookings_url, params: {
+    post_auth bookings_url, params: {
       car_id: "jfsjh87232",
       starts_at: timestr(now),
       ends_at: timestr(now + 0.5*h), 
@@ -70,21 +68,21 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
 
   test "do not allow booking same car twice" do
 
-    user = User.new
-    user.save!
+    @auth_token = create_user
+
     car1 = Car.new
     car1.save!
 
     now = Time.now
 
-    post bookings_url, params: {
+    post_auth bookings_url, params: {
       car_id: car1.id,
       starts_at: timestr(now),
       ends_at: timestr(now + 0.5*h), 
     }
     assert_equal 200, @response.status
 
-    post bookings_url, params: {
+    post_auth bookings_url, params: {
       car_id: car1.id,
       starts_at: timestr(now),
       ends_at: timestr(now + 0.5*h), 
@@ -96,15 +94,16 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "do not allow booking deactivated cars" do 
-    user = User.new
-    user.save!
+
+    @auth_token = create_user
+
     car1 = Car.new
     car1.active = false
     car1.save!
 
     now = Time.now
 
-    post bookings_url, params: {
+    post_auth bookings_url, params: {
       car_id: car1.id,
       starts_at: timestr(now),
       ends_at: timestr(now + 0.5*h), 
@@ -120,7 +119,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   def booking(car_id, starts_at, ends_at)
-    post bookings_url, params: {
+    post_auth bookings_url, params: {
       car_id: car_id,
       starts_at: timestr(starts_at),
       ends_at: timestr(ends_at), 
@@ -133,8 +132,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "filtering the list of bookings by car id" do
-    user = User.new
-    user.save!
+    @auth_token = create_user
 
     car1 = Car.new
     car1.save!
@@ -147,21 +145,19 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     booking(car1.id, now + 1*h, now + 1.5*h)
     booking(car2.id, now, now + 0.5*h)
 
-    get (bookings_url+"?car_id="+car2.id.to_s)
+    get_auth (bookings_url+"?car_id="+car2.id.to_s)
 
     res = JSON.parse(@response.body)
     assert_equal 200, @response.status
     assert_equal 1, res.length
     
-    assert_equal user.id, res[0]["user_id"]
     assert_equal car2.id, res[0]["car_id"]
     assert_equal timestr(now), res[0]["starts_at"]
     assert_equal timestr(now + 0.5*h), res[0]["ends_at"]
   end
 
   test "filtering the list of bookings by upcoming and current" do
-    user = User.new
-    user.save!
+    @auth_token = create_user
 
     car1 = Car.new
     car1.save!
@@ -174,7 +170,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     booking(car1.id, now, now + 1*h)
     booking(car1.id, now + 1.5*h, now + 2*h)
 
-    get (bookings_url+"?time=current")
+    get_auth (bookings_url+"?time=current")
     
     res = JSON.parse(@response.body)
     assert_equal 200, @response.status
@@ -183,7 +179,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     assert_equal timestr(now), res[0]["starts_at"]
     assert_equal timestr(now + 1*h), res[0]["ends_at"]
 
-    get (bookings_url+"?time=upcoming")
+    get_auth (bookings_url+"?time=upcoming")
     res = JSON.parse(@response.body)
     assert_equal 200, @response.status
     assert_equal 1, res.length
@@ -194,8 +190,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "filtering the list of bookings by both upcoming,current and car id" do
-    user = User.new
-    user.save!
+    @auth_token = create_user
 
     car1 = Car.new
     car1.save!
@@ -211,7 +206,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     booking(car2.id, now, now + 1*h)
     booking(car2.id, now + 1.5*h, now + 2*h)
 
-    get (bookings_url+"?time=current&car_id="+car2.id.to_s)
+    get_auth (bookings_url+"?time=current&car_id="+car2.id.to_s)
     
     res = JSON.parse(@response.body)
     assert_equal 200, @response.status

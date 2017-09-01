@@ -52,17 +52,20 @@ class BookingsController < ProtectedController
         q = Booking
         all = true
 
-        if params[:time]
-            case params[:time]
+        if params[:filter]
+            all = false
+            case params[:filter]
                 when "current"
                     now = Time.now
                     q = q.where("starts_at <= ? AND ends_at >= ?", now, now)
-                    all = false
                 when "upcoming"
                     q = q.where("starts_at >= ?", Time.now)
-                    all = false
+                when "started"
+                    q = q.where("status = ?", Booking.statuses[:started])
+                when "completed"
+                    q = q.where("status = ?", Booking.statuses[:completed])                            
                 else 
-                    render_error 400, :invalid_request, "time parameter must be current or upcoming"
+                    render_error 400, :invalid_request, "filter parameter must be current,upcoming,started or completed"
                     return
             end
         end

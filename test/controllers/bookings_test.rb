@@ -195,7 +195,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     booking(car1.id, now, now + 1*h)
     booking(car1.id, now + 1.5*h, now + 2*h)
 
-    get_auth (bookings_url+"?time=current")
+    get_auth (bookings_url+"?filter=current")
     
     res = JSON.parse(@response.body)
     assert_equal 200, @response.status
@@ -204,7 +204,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     assert_equal timestr(now), res[0]["starts_at"]
     assert_equal timestr(now + 1*h), res[0]["ends_at"]
 
-    get_auth (bookings_url+"?time=upcoming")
+    get_auth (bookings_url+"?filter=upcoming")
     res = JSON.parse(@response.body)
     assert_equal 200, @response.status
     assert_equal 1, res.length
@@ -231,7 +231,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     booking(car2.id, now, now + 1*h)
     booking(car2.id, now + 1.5*h, now + 2*h)
 
-    get_auth (bookings_url+"?time=current&car_id="+car2.id.to_s)
+    get_auth (bookings_url+"?filter=current&car_id="+car2.id.to_s)
     
     res = JSON.parse(@response.body)
     assert_equal 200, @response.status
@@ -240,6 +240,66 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     assert_equal car2.id, res[0]["car_id"]
     assert_equal timestr(now), res[0]["starts_at"]
     assert_equal timestr(now + 1*h), res[0]["ends_at"]   
+  end
+
+  test "filtering the list of bookings by started, ended" do
+    @auth_token = create_user
+
+    user = User.take
+
+    car1 = Car.new
+    car1.save!
+
+    now = Time.now
+
+    b1 = Booking.new
+    b1.user_id = user.id
+    b1.car_id = car1.id
+    b1.starts_at = now 
+    b1.ends_at = now + 1*h
+    b1.save!
+
+    b2 = Booking.new
+    b2.user_id = user.id
+    b2.car_id = car1.id
+    b2.starts_at = now + 1*h
+    b2.ends_at = now + 2*h
+    b2.status = "started"
+    b2.save!
+
+    b3 = Booking.new
+    b3.user_id = user.id
+    b3.car_id = car1.id
+    b3.starts_at = now + 2*h
+    b3.ends_at = now + 3*h
+    b3.status = "completed"
+    b3.save!    
+
+    now = Time.now
+
+    get_auth bookings_url
+
+    res = JSON.parse(@response.body)
+    assert_equal 200, @response.status
+    assert_equal 3, res.length
+
+    res.sort_by! { |obj| obj['starts_at'] }    
+    assert_equal "started", res[1]["status"], "status is printed as text"
+
+    get_auth bookings_url + "?filter=started"
+
+    res = JSON.parse(@response.body)
+    assert_equal 200, @response.status
+    assert_equal 1, res.length
+    assert_equal "started", res[0]["status"]
+
+    get_auth bookings_url + "?filter=completed"
+
+    res = JSON.parse(@response.body)
+    assert_equal 200, @response.status
+    assert_equal 1, res.length
+    assert_equal "completed", res[0]["status"]    
+
   end
 
   test "allow starting and ending bookings" do

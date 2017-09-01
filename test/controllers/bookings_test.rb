@@ -38,6 +38,29 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     assert_equal timestr(now + 1*h), res[1]["starts_at"]
   end
 
+  test "allow creating bookings back to back" do
+
+    @auth_token = create_user
+
+    car1 = Car.new
+    car1.save!
+
+    now = Time.now
+
+    booking(
+      car1.id,
+      now,
+      now + 1*h, 
+    )
+    
+    booking(
+      car1.id,
+      now + 1*h,
+      now + 2*h, 
+    )
+
+  end
+
   test "create invalid requests" do
 
     @auth_token = create_user

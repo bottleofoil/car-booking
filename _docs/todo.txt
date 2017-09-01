@@ -1,1 +1,0 @@
-- BUG: should allow booking car back to back, for example 11:00-12:00,12:00-13:00

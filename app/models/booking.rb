@@ -6,9 +6,9 @@ class Booking < ApplicationRecord
 
     def booking_conflict
         Booking.where("
-            ((starts_at <= ? AND ends_at >= ?) OR
+            ((starts_at < ? AND ends_at > ?) OR
             (starts_at >= ? AND ends_at <= ?) OR 
-            (starts_at <= ? AND ends_at >= ?)) 
+            (starts_at < ? AND ends_at > ?)) 
             AND car_id = ?
         ",
             starts_at, starts_at,

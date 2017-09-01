@@ -4,12 +4,17 @@ class AuthController < ApplicationController
 
         user = User.find_by_email(params[:email])
         if !user
-            render_error 400, :invalid_request, "No user found with provided email"
+            render_error 403, :invalid_user, "No user found with provided email"
             return
         end
 
+        if !user.active
+            render_error 403, :user_deactivated, "Provided user is deactivated"
+            return
+        end          
+
         if !user.authenticate(params[:password])
-            render_error 400, :invalid_request, "Invalid password"
+            render_error 403, :invalid_password, "Invalid password"
             return
         end
 

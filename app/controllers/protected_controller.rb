@@ -25,6 +25,11 @@ class ProtectedController < ApplicationController
             return        
         end
         
+        if !session.user.active
+            render_error 403, :missing_permissions, "The user has been deactivated"
+            return        
+        end
+
         @user = session.user
     end
 

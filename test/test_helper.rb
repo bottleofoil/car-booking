@@ -7,15 +7,15 @@ class ActiveSupport::TestCase
 
   # Add more helper methods to be used by all tests here...
 
-  def create_user
+  def create_user(email = "e@e.com")
     post users_url, params: {
-        email: "e@e.com",
+        email: email,
         password: "password",
     }
     assert_equal 200, @response.status
 
     post auth_url, params: {
-        email: "e@e.com",
+        email: email,
         password: "password",
     }
 

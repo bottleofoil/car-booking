@@ -83,7 +83,7 @@ class BookingsController < ProtectedController
     end
 
     def start
-        booking = get_booking
+        booking = get_booking_owned_by_current_user
         if !booking 
             return
         end
@@ -96,7 +96,7 @@ class BookingsController < ProtectedController
     end
 
     def end
-        booking = get_booking
+        booking = get_booking_owned_by_current_user
         if !booking 
             return
         end  
@@ -112,9 +112,14 @@ class BookingsController < ProtectedController
 
     private
 
-    def get_booking
+    def get_booking_owned_by_current_user
         begin 
-            return Booking.find(params[:id])
+            booking = Booking.find(params[:id])
+            if booking.user_id != @user.id 
+                render_error 403, :not_owned, "you do not have permission to modify this booking"
+                return false                
+            end
+            return booking
         rescue ActiveRecord::RecordNotFound => e
             render_error 400, :invalid_request, "booking not found with provided id"
             return false

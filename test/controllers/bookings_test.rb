@@ -331,6 +331,30 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     
   end
 
+  test "only allow the user who created the booking to modify them" do 
+    user1 = create_user
+    user2 = create_user("e2@e.com")
+   
+    car1 = Car.new
+    car1.save!
+    now = Time.now
+    @auth_token = user1
+    b1 = booking(car1.id, now - h/6, now + 1*h)
+
+    @auth_token = user2
+    post_auth bookings_url + "/" + b1.to_s + "/start"
+
+    res = JSON.parse(@response.body)
+    assert_equal 403, @response.status
+    assert_equal "not_owned", res["error"]   
+
+    @auth_token = user1
+    post_auth bookings_url + "/" + b1.to_s + "/start"
+    res = JSON.parse(@response.body)
+    assert_equal 200, @response.status
+
+  end
+
   test "do not allow starting the same booking twice or ending unstarted" do
 
     @auth_token = create_user

@@ -49,11 +49,9 @@ class BookingsController < ProtectedController
     end
 
     def index
-        q = Booking
-        all = true
+        q = Booking.where("user_id = ?", @user.id)
 
         if params[:filter]
-            all = false
             case params[:filter]
                 when "current"
                     now = Time.now
@@ -72,14 +70,9 @@ class BookingsController < ProtectedController
 
         if params[:car_id]
             q = q.where("car_id = ?", params[:car_id])
-            all = false
         end
 
-        if all 
-            render json: Booking.all
-        else
-            render json: q
-        end
+        render json: q
     end
 
     def start

@@ -172,6 +172,28 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     time.utc.to_datetime.rfc3339(3).gsub("+00:00", "Z")
   end
 
+  test "prevent user from seeing bookings of other users" do 
+    user1 = create_user
+    user2 = create_user("user2@e.com")
+    @auth_token = user1
+
+    car1 = Car.new
+    car1.save!
+
+    now = Time.now
+
+    booking(car1.id, now, now + 0.5*h)
+    assert_equal 200, @response.status
+
+    @auth_token = user2
+    get_auth bookings_url
+
+    res = JSON.parse(@response.body)
+
+    assert_equal 200, @response.status
+    assert_equal 0, res.length
+  end
+
   test "filtering the list of bookings by car id" do
     @auth_token = create_user
 

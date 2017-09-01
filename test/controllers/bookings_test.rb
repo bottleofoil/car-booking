@@ -87,6 +87,22 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     res = JSON.parse(@response.body)
     assert_equal res["error"], "invalid_request"
 
+    post_auth bookings_url, params: {
+      car_id: car1.id,
+      ends_at: timestr(now + 0.5*h), 
+    }
+    assert_equal 400, @response.status
+    res = JSON.parse(@response.body)
+    assert_equal res["error"], "invalid_request"
+
+    post_auth bookings_url, params: {
+      car_id: car1.id,
+      starts_at: "asdasdasd",
+      ends_at: timestr(now + 0.5*h), 
+    }
+    assert_equal 400, @response.status
+    res = JSON.parse(@response.body)
+    assert_equal res["error"], "invalid_request"    
   end
 
   test "do not allow booking same car twice" do
